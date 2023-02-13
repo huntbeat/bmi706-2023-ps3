@@ -4,8 +4,7 @@ import streamlit as st
 
 ### P1.2 ###
 
-
-@st.cache
+@st.cache_data
 def load_data():
     # Move this code into `load_data` function {{
     cancer_df = pd.read_csv(
@@ -35,29 +34,32 @@ def load_data():
 # Uncomment the next line when finished
 df = load_data()
 
-### P1.2 ###
-
+### End of P1.2 ###
 
 st.write("## Age-specific cancer mortality rates")
 
 ### P2.1 ###
-# replace with st.slider
-year = 2012
-subset = df[df["Year"] == year]
-### P2.1 ###
-
+YEAR_COLUMN = "Year"
+year = st.slider(
+    'Select the year to filter by.',
+    min_value=int(df[YEAR_COLUMN].min()),
+    max_value=int(df[YEAR_COLUMN].max()))
+subset = df[df[YEAR_COLUMN] == year]
+### End of P2.1 ###
 
 ### P2.2 ###
 # replace with st.radio
-sex = "M"
-subset = subset[subset["Sex"] == sex]
-### P2.2 ###
-
+SEX_COLUMN = "Sex"
+sex = st.radio(
+    "Select to sex to filter by.",
+    ('M', 'F'))
+subset = subset[subset[SEX_COLUMN] == sex]
+### End of P2.2 ###
 
 ### P2.3 ###
 # replace with st.multiselect
 # (hint: can use current hard-coded values below as as `default` for selector)
-countries = [
+default_countries = [
     "Austria",
     "Germany",
     "Iceland",
@@ -66,16 +68,20 @@ countries = [
     "Thailand",
     "Turkey",
 ]
+countries = st.multiselect(
+    'What are your favorite colors',
+    options=df["Country"].unique(),
+    default=default_countries)
 subset = subset[subset["Country"].isin(countries)]
-### P2.3 ###
-
+### End of P2.3 ###
 
 ### P2.4 ###
 # replace with st.selectbox
-cancer = "Malignant neoplasm of stomach"
+cancer = st.selectbox(
+    'How would you like to be contacted?',
+    options=df["Cancer"].unique())
 subset = subset[subset["Cancer"] == cancer]
-### P2.4 ###
-
+### End of P2.4 ###
 
 ### P2.5 ###
 ages = [
@@ -97,9 +103,32 @@ chart = alt.Chart(subset).mark_bar().encode(
 ).properties(
     title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
 )
-### P2.5 ###
+
+age_select = alt.selection_single(
+    fields=['Age'],
+    init={'Age': ages[0]}
+)
+
+heatmap = alt.Chart(subset).mark_rect().encode(
+    x=alt.X('Age:O', sort=ages),
+    y='Country:N',
+    color=alt.Color('Rate:Q', scale=alt.Scale(type='log', domain=[0.01, 1000], clamp=True))
+).add_selection(
+  age_select
+)
+
+pop_chart = alt.Chart(subset).mark_bar().encode(
+    x="Pop:Q",
+    y='Country:N'
+).transform_filter(
+  age_select
+)
+
+### End of P2.5 ###
 
 st.altair_chart(chart, use_container_width=True)
+st.altair_chart(heatmap, use_container_width=True)
+st.altair_chart(pop_chart, use_container_width=True)
 
 countries_in_subset = subset["Country"].unique()
 if len(countries_in_subset) != len(countries):
