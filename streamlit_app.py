@@ -69,7 +69,7 @@ default_countries = [
     "Turkey",
 ]
 countries = st.multiselect(
-    'What are your favorite colors',
+    'Countries',
     options=df["Country"].unique(),
     default=default_countries)
 subset = subset[subset["Country"].isin(countries)]
@@ -78,7 +78,7 @@ subset = subset[subset["Country"].isin(countries)]
 ### P2.4 ###
 # replace with st.selectbox
 cancer = st.selectbox(
-    'How would you like to be contacted?',
+    'Cancer',
     options=df["Cancer"].unique())
 subset = subset[subset["Cancer"] == cancer]
 ### End of P2.4 ###
@@ -95,38 +95,36 @@ ages = [
     "Age >64",
 ]
 
-chart = alt.Chart(subset).mark_bar().encode(
-    x=alt.X("Age", sort=ages),
-    y=alt.Y("Rate", title="Mortality rate per 100k"),
-    color="Country",
-    tooltip=["Rate"],
-).properties(
-    title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
-)
+# Removing demo chart given with template
+# chart = alt.Chart(subset).mark_bar().encode(
+#     x=alt.X("Age", sort=ages),
+#     y=alt.Y("Rate", title="Mortality rate per 100k"),
+#     color="Country",
+#     tooltip=["Rate"],
+# ).properties(
+#     title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
+# )
 
-age_select = alt.selection_single(
-    fields=['Age'],
-    init={'Age': ages[0]}
-)
+interval_brush = alt.selection(type='interval', encodings=['x'], fields=['Age'])
+
+pop_chart = alt.Chart(subset).mark_bar().encode(
+    x=alt.X("sum(Pop)"),
+    y='Country:N'
+).transform_filter(interval_brush)
 
 heatmap = alt.Chart(subset).mark_rect().encode(
     x=alt.X('Age:O', sort=ages),
     y='Country:N',
-    color=alt.Color('Rate:Q', scale=alt.Scale(type='log', domain=[0.01, 1000], clamp=True))
+    color=alt.Color('Rate:Q', scale=alt.Scale(type='log', domain=(0.01, 1000), clamp=True))
 ).add_selection(
-  age_select
-)
-
-pop_chart = alt.Chart(subset).mark_bar().encode(
-    x="Pop:Q",
-    y='Country:N'
-).transform_filter(
-  age_select
+  interval_brush
+).properties(
+    title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
 )
 
 ### End of P2.5 ###
 
-st.altair_chart(chart, use_container_width=True)
+# st.altair_chart(chart, use_container_width=True)
 st.altair_chart(heatmap, use_container_width=True)
 st.altair_chart(pop_chart, use_container_width=True)
 
