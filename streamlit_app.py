@@ -107,12 +107,14 @@ ages = [
 
 interval_brush = alt.selection(type='interval', encodings=['x'], fields=['Age'])
 
-pop_chart = alt.Chart(subset).mark_bar().encode(
-    x=alt.X("sum(Pop)"),
+pop_chart = alt.Chart().mark_bar().encode(
+    x="sum(Pop)",
     y='Country:N'
-).transform_filter(interval_brush)
+).transform_filter(interval_brush).properties(
+    width=600,
+)
 
-heatmap = alt.Chart(subset).mark_rect().encode(
+heatmap = alt.Chart().mark_rect().encode(
     x=alt.X('Age:O', sort=ages),
     y='Country:N',
     color=alt.Color('Rate:Q', scale=alt.Scale(type='log', domain=(0.01, 1000), clamp=True))
@@ -120,13 +122,14 @@ heatmap = alt.Chart(subset).mark_rect().encode(
   interval_brush
 ).properties(
     title=f"{cancer} mortality rates for {'males' if sex == 'M' else 'females'} in {year}",
+    width=600,
 )
 
 ### End of P2.5 ###
 
 # st.altair_chart(chart, use_container_width=True)
-st.altair_chart(heatmap, use_container_width=True)
-st.altair_chart(pop_chart, use_container_width=True)
+all_charts = alt.vconcat(heatmap, pop_chart, data=subset)
+st.altair_chart(all_charts, use_container_width=True)
 
 countries_in_subset = subset["Country"].unique()
 if len(countries_in_subset) != len(countries):
